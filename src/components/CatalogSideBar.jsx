@@ -75,6 +75,7 @@ import { generateNykaaSweatShirtMaternityListing } from '../catalog/maternity/ny
 import { generateNykaaTopMaternityListing } from '../catalog/maternity/nykaa maternity/NykaaTopMaternity';
 import { generateShopifyUSListing } from '../catalog/Shopify/ShopifyUsListingGeneration';
 import { generateShopifyMaternity } from '../catalog/maternity/shopify/GenerateShopifyMaternityListing';
+import { generateBlazersListingFile } from '../catalog/myntra/qurvii/MyntraBlazers';
 const Sidebar = ({ data, selectedChannels, selectedBrands }) => {
   const [openChannels, setOpenChannels] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -238,6 +239,15 @@ const Sidebar = ({ data, selectedChannels, selectedBrands }) => {
             generateMyntraJacketListingFile(data, headers);
           },
         },
+
+        {
+          type: 'Blazers',
+          action: () => generateBlazersListingFile(data),
+          actionWithHeaders: (data, headers) => {
+            generateBlazersListingFile(data, headers);
+          },
+        },
+
         {
           type: 'Coat',
           action: () => generateMyntraCoatListingFile(data),
@@ -653,6 +663,7 @@ const Sidebar = ({ data, selectedChannels, selectedBrands }) => {
     }
     const categoryCount = {
       dress: (category['dress'] || 0) + (category['kaftan'] || 0),
+      blazers: (category['blazers'] || 0) + (category['blazer'] || 0),
       pant:
         (category['pant'] || 0) +
         (category['trouser'] || 0) +
