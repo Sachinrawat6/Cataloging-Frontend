@@ -206,23 +206,28 @@ const generateTatacliqListing = (selectedData) => {
       const mappedSize = sizeMapping[size];
 
       let product_category = {
-        Dress: 'AWWDressmaterial',
-        Top: 'AWWTopsandtees',
-        Shirt: 'AWWcasualshirts',
-        Jacket: 'AWWFormalcoatsjackets',
-        Coat: 'AWWFormalcoatsjackets',
-        Plazzo: 'AWWSTrackpants',
-        Pant: 'AWWSTrackpants',
-        Trouser: 'AWWSTrackpants',
-        Shrug: 'AWWShrugsandcardigans',
-        Skirt: 'AWWSkirts',
-        Kaftan: 'AWWDressmaterial',
-        'Shirt Dress': 'AWWDressmaterial',
-        Hoodie: 'AWWSweatshirtsandhoodies',
-        Sweatshirt: 'AWWSweatshirtsandhoodies',
+        dress: 'AWWDressmaterial',
+        top: 'AWWTopsandtees',
+        shirt: 'AWWcasualshirts',
+        jacket: 'AWWFormalcoatsjackets',
+        coat: 'AWWFormalcoatsjackets',
+        plazzo: 'AWWSTrackpants',
+        pant: 'AWWSTrackpants',
+        shorts: 'AWWShorts',
+        short: 'AWWShorts',
+        'night dress': 'AWWDressmaterial',
+        trouser: 'AWWSTrackpants',
+        shrug: 'AWWShrugsandcardigans',
+        skirt: 'AWWSkirts',
+        kaftan: 'AWWDressmaterial',
+        'shirt dress': 'AWWDressmaterial',
+        hoodie: 'AWWSweatshirtsandhoodies',
+        sweatshirt: 'AWWSweatshirtsandhoodies',
+        blazer: 'AWWCasualjacketsandblazers',
       };
 
-      let category_name = typeof product.styleType === 'string' ? product.styleType.trim() : '';
+      let category_name =
+        typeof product.styleType === 'string' ? product.styleType?.toLowerCase()?.trim() : '';
       let productCategory = product_category[category_name] || product.styleType;
 
       let seasonYear = new Date().getFullYear();
@@ -702,13 +707,13 @@ const generateTatacliqListing = (selectedData) => {
         '#ATTR_menpattern_Pattern': patternType,
         '#ATTR_sizechart_Size Chart': '',
         '#ATTR_washcare_Wash Care': product.washCare,
-        '#ATTR_stylecode_Style Code': product.styleNumber,
+        '#ATTR_stylecode_Style Code': `AW${seasonYear.toString().slice(2)}${product.patternNumber}`,
         '#ATTR_fittopwearmen_Fit': fittingTypeMap[product.fittingType] || 'Regular Fit',
         '#ATTR_mencasualtopwearsize_Size': mappedSize,
-        '#ATTR_fabricapparel_Fabric': fabricName,
+        '#ATTR_fabricapparel_Fabric': product.fabricType,
         '#ATTR_waistrise_Waist Rise': 'Mid Rise',
         '#ATTR_denimtreatments_Denim Treatments': 'Other',
-        TITLE: `Qurvii ${product.stylePrimaryColor} ${mappedSize} ${product.fittingType} ${product.styleName}`,
+        TITLE: `Qurvii ${product.stylePrimaryColor}  ${product.fittingType} ${product.styleName}`,
         DESCRIPTION: product.styleDescription,
         PBIIDENTITYCODE: 'MPN',
         PBIIDENTITYVALUE: `${product.styleNumber}${product.stylePrimaryColor}${mappedSize}`,
