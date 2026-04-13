@@ -302,7 +302,7 @@ const generateTatacliqCoordsPlusListing = (coords, selectedData) => {
 
         'SKUCODE*': `${coord.coordStyleNumber}-${style1.stylePrimaryColor}-${mappedSize}`,
         '#ATTR_waistrise_Waist Rise': 'Mid rise',
-        '#ATTR_denimtreatments_Denim Treatments*': 'Other',
+        '#ATTR_denimtreatments_Denim Treatments*': '',
         '#ATTR_withblouse_With Blouse': 'No',
         '#ATTR_wiring_Wiring': '',
         '#ATTR_bracoverage_Coverage': '',

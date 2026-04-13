@@ -707,7 +707,7 @@ const generateTatacliqListing = (selectedData) => {
         '#ATTR_menpattern_Pattern': patternType,
         '#ATTR_sizechart_Size Chart': '',
         '#ATTR_washcare_Wash Care': product.washCare,
-        '#ATTR_stylecode_Style Code': `AW${seasonYear.toString().slice(2)}${product.patternNumber}`,
+        '#ATTR_stylecode_Style Code': `${product.patternNumber}${product.fabricType}`,
         '#ATTR_fittopwearmen_Fit': fittingTypeMap[product.fittingType] || 'Regular Fit',
         '#ATTR_mencasualtopwearsize_Size': mappedSize,
         '#ATTR_fabricapparel_Fabric': product.fabricType,
