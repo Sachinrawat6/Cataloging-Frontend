@@ -704,7 +704,7 @@ const generateTatacliqListing = (selectedData) => {
         inventorydetails: '',
         HSNCODE: hsnCode,
         '#ATTR_colorapparel_Color': product.stylePrimaryColor,
-        '#ATTR_menpattern_Pattern': patternType,
+        '#ATTR_menpattern_Pattern': '',
         '#ATTR_sizechart_Size Chart': '',
         '#ATTR_washcare_Wash Care': product.washCare,
         '#ATTR_stylecode_Style Code': `${product.patternNumber}${product.fabricType}`,
