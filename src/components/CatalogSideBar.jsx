@@ -76,6 +76,7 @@ import { generateNykaaTopMaternityListing } from '../catalog/maternity/nykaa mat
 import { generateShopifyUSListing } from '../catalog/Shopify/ShopifyUsListingGeneration';
 import { generateShopifyMaternity } from '../catalog/maternity/shopify/GenerateShopifyMaternityListing';
 import { generateBlazersListingFile } from '../catalog/myntra/qurvii/MyntraBlazers';
+import { generateNykaaBlazerListing } from '../catalog/Nykaa/NykaaBlazersListingGeneration';
 const Sidebar = ({ data, selectedChannels, selectedBrands }) => {
   const [openChannels, setOpenChannels] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -447,6 +448,13 @@ const Sidebar = ({ data, selectedChannels, selectedBrands }) => {
           action: () => generateNykaaSkirtListing(data),
           actionWithHeaders: (data, headers) => {
             generateNykaaSkirtListing(data, headers);
+          },
+        },
+        {
+          type: 'Blazers',
+          action: () => generateNykaaBlazerListing(data),
+          actionWithHeaders: (data, headers) => {
+            generateNykaaBlazerListing(data, headers);
           },
         },
         {
