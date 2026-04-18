@@ -1,534 +1,585 @@
-import Papa from "papaparse";
+import Papa from 'papaparse';
 
-const generateAjioTopstListing = (selectedData) => {
-    const csvHeaders = [
-        "Style Code",
-        "Style Description",
-        "Item SKU",
-        "Brand",
-        "EAN",
-        "TD",
-        "MRP",
-        "HSN",
-        "Product Groups",
-        "Fashion Groups",
-        "Season Code",
-        "Season Year",
-        "Size",
-        "articleDimensionsUnitHeight",
-        "articleDimensionsUnitLength",
-        "articleDimensionsUnitWidth",
-        "articleDimensionsUnitLengthUOM",
-        "articleDimensionsUnitWeight",
-        "articleDimensionsUnitWeightUOM",
-        "packageDimensionsHeight",
-        "packageDimensionsLength",
-        "packageDimensionsWidth",
-        "packageDimensionsLengthUOM",
-        "packageDimensionsWeight",
-        "packageDimensionsWeightUOM",
-        "Additional Information 1",
-        "Additional Information 2",
-        "Additional Information 3",
-        "Character",
-        "Component Count",
-        "Country of Origin",
-        "Hidden Detail",
-        "Highlight",
-        "Imported By",
-        "Manufactured By",
-        "Marketed By",
-        "Mood",
-        "Sold By",
-        "Multi Brick",
-        "Multi Segment",
-        "Multi Vertical",
-        "Net Quantity",
-        "Package Contains",
-        "Size Tip",
-        "USP",
-        "Trend Theme",
-        "Accent",
-        "Color Family",
-        "Color Shade",
-        "Disclaimer",
-        "Fabric Detail",
-        "Fabric Type",
-        "Pattern",
-        "Primary Color",
-        "Secondary Color",
-        "Size Format",
-        "Size Group",
-        "Wash Care",
-        "Care",
-        "Size worn by Model",
-        "Stock Type",
-        "Fitting",
-        "IND_PT(ONLY FOR INTERNAL USE)",
-        "Product Name",
-        "Length",
-        "Neckline",
-        "Sleeve Length",
-        "Sleeve Type",
-        "Sport",
-        "StandardSize",
-    ];
+// ─── Static lookup tables — defined once, never recreated per call ────────────
 
-    const sizeMapping = {
-        XXS: "XXS",
-        XS: "XS",
-        S: "S",
-        M: "M",
-        L: "L",
-        XL: "XL",
-        XXL: "2XL",
-        XXXL: "3XL",
-        XXXXL: "4XL",
-        XXXXXL: "5XL",
-    };
+const SIZE_MAPPING = {
+  XXS: 'XXS',
+  XS: 'XS',
+  S: 'S',
+  M: 'M',
+  L: 'L',
+  XL: 'XL',
+  XXL: 'XXL',
+  XXXL: '3XL',
+  XXXXL: '4XL',
+  XXXXXL: '5XL',
+};
+const SIZES = Object.keys(SIZE_MAPPING);
 
-    const sizes = Object.keys(sizeMapping); // ["XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL", "XXXXL", "XXXXXL"]
-    const year = new Date().getFullYear();
-    const csvData = selectedData.filter((product) => product.styleType === "Top" || product.styleType.includes("top"))
-        .flatMap((product) =>
-            sizes.map((size) => {
-                const mappedSize = sizeMapping[size]; // Convert size to 2XL, 3XL, etc.
+const SEASON_KEYWORDS = { summer: 'Summer', winter: 'Winter', spring: 'Spring', fall: 'Fall' };
 
-                //   ******************************************** products mapping start from here *********************
+const COLOR_FAMILY = new Set([
+  'Aqua',
+  'Beige',
+  'Black',
+  'Blue',
+  'Bronze',
+  'Brown',
+  'Copper',
+  'Cream',
+  'Gold',
+  'Green',
+  'Grey',
+  'Khaki',
+  'Magenta',
+  'Maroon',
+  'Metallic',
+  'Multi',
+  'Mustard',
+  'Navy',
+  'Nude',
+  'Olive',
+  'Orange',
+  'Peach',
+  'Pink',
+  'Purple',
+  'Red',
+  'Rust',
+  'Silver',
+  'Tan',
+  'Teal',
+  'White',
+  'Yellow',
+  'Clear',
+  'Rose Gold',
+  'Fuchsia',
+  'Charcoal',
+  'Coffee',
+  'Grey Melange',
+  'Lime',
+  'Off White',
+  'Turquoise',
+  'Coral',
+  'Burgundy',
+  'Indigo',
+  'Ecru',
+  'Lavender',
+  'Violet',
+  'Wine',
+  'Mauve',
+  'Sea Green',
+  'Taupe',
+]);
 
-                //    *********************** start of season code mapping *********************
-                let season = "";
+const COLOR_MAPPING = {
+  Gray: 'Grey',
+  'Lavender Blush': 'Lavender',
+  'Sky Blue': 'Blue',
+  'Mint Green': 'Green',
+  'Neon Yellow': 'Yellow',
+  Ivory: 'Off White',
+  'Royal Blue': 'Blue',
+};
 
-                if (product.season && product.season.trim() !== "") {
-                    // Check if season exists and is not empty
-                    const seasonLower = product.season.toLowerCase(); // Convert to lowercase for case-insensitive comparison
+// ── Full Ajio fabric dropdown ─────────────────────────────────────────────────
+const FABRIC_LIST = new Set([
+  'Acrylic',
+  'Art Silk',
+  'Banarasi',
+  'Cambric',
+  'Chanderi',
+  'Chiffon',
+  'Corduroy',
+  'Cotton',
+  'Crepe',
+  'Denim',
+  'Dobby',
+  'Dupion',
+  'Fleece',
+  'Georgette',
+  'Ikat',
+  'Jacquard',
+  'Kanjeevaram',
+  'Leather',
+  'Linen',
+  'Modal',
+  'Muslin',
+  'Mysore Silk',
+  'Net',
+  'Nylon',
+  'Organza',
+  'Paithani',
+  'Pashmina',
+  'Polyester',
+  'PU',
+  'Raw Silk',
+  'Rayon',
+  'Satin',
+  'Silk',
+  'Synthetic',
+  'Tanchoi',
+  'Tussar',
+  'Velvet',
+  'Viscose',
+  'Wool',
+  'Bagru',
+  'Baluchari',
+  'Bamboo',
+  'Bandhej',
+  'Batik',
+  'Brocade',
+  'Canvas',
+  'Cashmere',
+  'Chambray',
+  'Cheesecloth',
+  'Chenille',
+  'Dharmavaram',
+  'Excel',
+  'Flannel',
+  'Flex',
+  'Gadwal',
+  'Ghatchola',
+  'Handloom',
+  'HerringBone',
+  'Houndstooth',
+  'Jamdani',
+  'Jamevar',
+  'Kantha',
+  'Khadi',
+  'Knit',
+  'Kosa',
+  'Lace',
+  'LambsWool',
+  'Linen Blend',
+  'Lurex',
+  'Maheshwari',
+  'Mangalgiri',
+  'Merino',
+  'Mohair',
+  'Munga',
+  'Narayanpet',
+  'Organdie',
+  'Organic Cotton',
+  'Others',
+  'Patola',
+  'Phulkari',
+  'Pochampally',
+  'Poplin',
+  'Ramie',
+  'Sambalpuri',
+  'Seersucker',
+  'Shantoon',
+  'Slub',
+  'Tabby',
+  'Taffeta',
+  'Tangail',
+  'Tant',
+  'Tencel',
+  'Terry',
+  'Twill',
+  'Velour',
+  'Venkatagiri',
+  'Voile',
+  'Liva',
+  'Lyocell',
+  'Chinlon',
+  'Elastane',
+  'Hemp',
+  'Mesh',
+  'Microfibre',
+  'Polyamide',
+  'PU Coated Polyester',
+  'Technical Fabric',
+  'Terry Rayon',
+]);
 
-                    if (seasonLower.includes("summer")) {
-                        season = "Summer";
-                    } else if (seasonLower.includes("winter")) {
-                        season = "Winter";
-                    } else if (seasonLower.includes("spring")) {
-                        season = "Spring";
-                    } else if (seasonLower.includes("fall")) {
-                        season = "Fall";
-                    }
-                }
+// ── Pre-sorted for includes matching — longer names checked first ─────────────
+// This ensures "Organic Cotton" matches before "Cotton", "Art Silk" before "Silk", etc.
+const FABRIC_LIST_SORTED = [...FABRIC_LIST].sort((a, b) => b.length - a.length);
 
-                //    *********************** end of season code mapping *********************
+// ── Your internal fabric names → Ajio dropdown values ────────────────────────
+// Keys are lowercased + trimmed for case-insensitive lookup
+const FABRIC_MAPPING = {
+  silk: 'Silk',
+  crepe: 'Crepe',
+  'crepe silk': 'Crepe',
+  georgette: 'Georgette',
+  'georgette cosmic': 'Georgette',
+  satin: 'Satin',
+  'satin crush': 'Satin',
+  'satin silk': 'Satin',
+  'silk crepe': 'Crepe',
+  'silk blend': 'Silk',
+  'poly silk': 'Silk',
+  'summer cool': 'Others',
+  rayon: 'Rayon',
+  'rayon twill': 'Rayon',
+  'crinkle rayon': 'Rayon',
+  lycra: 'Elastane',
+  'lycra telsa': 'Elastane',
+  'lycra scrubble': 'Elastane',
+  'lycra valentino': 'Elastane',
+  'lycra rib': 'Elastane',
+  jersey: 'Knit',
+  'jersey lycra': 'Knit',
+  rib: 'Knit',
+  cotton: 'Cotton',
+  'cotton slub': 'Slub',
+  'cotton blend': 'Cotton',
+  'mul cotton': 'Muslin',
+  mulmul: 'Muslin',
+  chiffon: 'Chiffon',
+  velvet: 'Velvet',
+  suede: 'Others',
+  fleece: 'Fleece',
+  'anti-piling fleece': 'Fleece',
+  'sherpa fleece': 'Fleece',
+  sherpa: 'Fleece',
+  other: 'Others',
+  wool: 'Wool',
+  'swiss dott': 'Others',
+  'swiss dot': 'Others',
+  'moss crepe': 'Crepe',
+  'french crepe': 'Crepe',
+  'poly crepe': 'Crepe',
+  net: 'Net',
+  poplin: 'Poplin',
+  sequins: 'Others',
+  viscose: 'Viscose',
+  twill: 'Twill',
+  telsa: 'Others',
+  scrubble: 'Others',
+  valentino: 'Others',
+  'barfi/kitkat': 'Others',
+  linen: 'Linen',
+  brocade: 'Brocade',
+  organza: 'Organza',
+  crochet: 'Others',
+  'mul mul': 'Muslin',
+};
 
-                //    *********************** start of color code mapping *********************
-                let colorShade = "";
+// ── Other mappings ─────────────────────────────────────────────────────────────
+const PATTERN_LIST = new Set([
+  'Solid',
+  'Stripes',
+  'Textured',
+  'Tie & Dye',
+  'Typographic',
+  'Applique',
+  'Self-design',
+  'Abstract',
+  'Animal',
+  'Aztec',
+  'Block Print',
+  'Cartoon',
+  'Chevrons',
+  'Geometric',
+  'Graphic',
+  'Heathered',
+  'Indian',
+  'Leaf',
+  'Micro Print',
+  'Nailhead',
+  'Novelty',
+  'Numeric',
+  'Paisley',
+  'Quilted',
+  'Reptilian',
+  'Tropical',
+  'Baroque',
+  'Embroidery',
+  'Holographic',
+  'Monochrome',
+  'Nautical',
+  'Others',
+  'Ribbed',
+  'Ruffles',
+  'Colourblock',
+  'Crochet',
+  'Patch-work',
+  'Camouflage',
+  'Checks',
+  'Embellished',
+  'Floral',
+  'Lace',
+  'Ombre-dyed',
+  'Polka-dot',
+  'Washed',
+  'Tribal',
+]);
 
-                if (product.stylePrimaryColor && product.stylePrimaryColor.trim() !== "") {
-                    colorShade =
-                        product.stylePrimaryColor.trim().toLowerCase() === "pastel" ? "Light" : "Dark";
-                }
+const PATTERN_MAPPING = { Ombre: 'Ombre-dyed', Polka: 'Polka-dot', Leopard: 'Animal' };
 
-                // Color Family
-                const colorFamily = new Set([
-                    "Aqua",
-                    "Beige",
-                    "Black",
-                    "Blue",
-                    "Bronze",
-                    "Brown",
-                    "Copper",
-                    "Cream",
-                    "Gold",
-                    "Green",
-                    "Grey",
-                    "Khaki",
-                    "Magenta",
-                    "Maroon",
-                    "Metallic",
-                    "Multi",
-                    "Mustard",
-                    "Navy",
-                    "Nude",
-                    "Olive",
-                    "Orange",
-                    "Peach",
-                    "Pink",
-                    "Purple",
-                    "Red",
-                    "Rust",
-                    "Silver",
-                    "Tan",
-                    "Teal",
-                    "White",
-                    "Yellow",
-                    "Clear",
-                    "Rose Gold",
-                    "Fuchsia",
-                    "Charcoal",
-                    "Coffee",
-                    "Grey Melange",
-                    "Lime",
-                    "Off White",
-                    "Turquoise",
-                    "Coral",
-                    "Burgundy",
-                    "Indigo",
-                    "Ecru",
-                    "Lavender",
-                    "Violet",
-                    "Wine",
-                    "Mauve",
-                    "Sea Green",
-                    "Taupe",
-                ]);
+const WASH_CARE_MAPPING = {
+  'Machine Wash': 'Machine wash',
+  'Dry Clean Only': 'Dry clean',
+  'Hand Wash': 'Hand wash',
+};
 
-                let prominentColor = "";
+const FITTING_TYPE_MAPPING = {
+  'loose fit': 'Loose Fit',
+  'regular fit': 'Regular Fit',
+  'slim fit': 'Slim Fit',
+  'relaxed fit': 'Relaxed Fit',
+  'stretch fit': 'Extra Slim Fit',
+  oversized: 'Oversized Fit',
 
-                if (product.stylePrimaryColor && product.stylePrimaryColor.trim() !== "") {
-                    const trimmedColor = product.stylePrimaryColor.trim();
+  'regular fit, loose fit': 'Regular Fit',
+  'regular fit, western': 'Regular Fit',
+  other: 'Regular Fit',
+  'regular fit, loose fit, classic': 'Regular Fit',
+  'regular fit, loose fit, western': 'Regular Fit',
+  'regular fit, western, relaxed': 'Regular Fit',
+  'regular fit, loose fit, relaxed': 'Regular Fit',
+  'regular fit, relaxed': 'Regular Fit',
+  'regular fit, slim fit, relaxed': 'Regular Fit',
+  'regular fit, slim fit, western, classic': 'Regular Fit',
+  'regular fit, slim fit, classic': 'Regular Fit',
 
-                    if (colorFamily.has(trimmedColor)) {
-                        prominentColor = trimmedColor;
-                    } else {
-                        // Mapping alternate color names to standard color family
-                        const colorMapping = {
-                            Gray: "Grey",
-                            "Lavender Blush": "Lavender",
-                            "Sky Blue": "Blue",
-                            "Mint Green": "Green",
-                            "Neon Yellow": "Yellow",
-                            Ivory: "Off White",
-                            "Royal Blue": "Blue",
-                        };
+  'loose fit, western, fusion': 'Loose Fit',
+  'regular fit, loose fit, western, relaxed': 'Regular Fit',
+  'loose fit, western, relaxed': 'Loose Fit',
+  'loose fit, western, fusion, relaxed': 'Loose Fit',
 
-                        prominentColor = colorMapping[trimmedColor] || "";
-                    }
-                }
+  'slim fit, relaxed': 'Slim Fit',
+  'regular fit, western, fusion': 'Regular Fit',
+  'western, fusion, relaxed': 'Relaxed Fit',
+  'regular fit, loose fit, western, fusion': 'Regular Fit',
 
-                //    *********************** end of color code mapping *********************
+  'fit & flare': 'Oversized Fit',
+  ' fit & flare': 'Oversized Fit', // extra space case
+  bodycon: 'Extra Slim Fit',
+};
 
-                //    *********************** start of fabric  mapping *********************
-                const fabricList = new Set([
-                    "Acrylic",
-                    "Art Silk",
-                    "Banarasi",
-                    "Cambric",
-                    "Chanderi",
-                    "Chiffon",
-                    "Corduroy",
-                    "Cotton",
-                    "Crepe",
-                    "Denim",
-                    "Dobby",
-                    "Dupion",
-                    "Fleece",
-                    "Georgette",
-                    "Ikat",
-                    "Jacquard",
-                    "Kanjeevaram",
-                    "Leather",
-                    "Linen",
-                    "Modal",
-                    "Muslin",
-                    "Mysore Silk",
-                    "Net",
-                    "Nylon",
-                    "Organza",
-                    "Pashmina",
-                    "Polyester",
-                    "PU",
-                    "Raw Silk",
-                    "Rayon",
-                    "Satin",
-                    "Silk",
-                    "Synthetic",
-                    "Velvet",
-                    "Viscose",
-                    "Wool",
-                    "Bamboo",
-                    "Brocade",
-                    "Canvas",
-                    "Cashmere",
-                    "Chambray",
-                    "Flannel",
-                    "Flex",
-                    "Handloom",
-                    "Khadi",
-                    "Knit",
-                    "Kosa",
-                    "Lace",
-                    "Linen Blend",
-                    "Organic Cotton",
-                    "Others",
-                    "Phulkari",
-                    "Seersucker",
-                    "Terry",
-                    "Elastane",
-                ]);
+const NORMAL_TO_MAPPED_NECKLINE = {
+  'v neck': 'V-neck',
+  'button front': 'Button-down',
+  'classic shirt': 'Collar',
+  'shawl collar': 'Lapel',
+  'not applicable': 'Other',
+  shawl: 'Lapel',
+  'square neck': 'Square',
+  'mandarin collar': 'Mandarin',
+  'round neck': 'Round',
+  'off shoulder': 'Off Shoulder',
+  hooded: 'Hooded',
+  'boat neck': 'Boat',
+  'classic collar': 'Collar',
+  'classic shirt collar': 'Collar',
+  other: 'Other',
+  'banded collar': 'Band Collar',
+  'sweat heart neck': 'Sweetheart',
+  'one shoulder': 'One Shoulder',
+  'crew neck': 'Crew',
+  peterpan: 'Peter Pan Collar',
+  'wide collar v neck': 'V-neck',
+  'tie or bow': 'Tie-up',
+  'halter neck': 'Halter',
+  tuxedo: 'Other',
+  'option 33': 'Other',
+  'cowl neck': 'Cowl',
+  'spaghetti strap': 'Other',
+  'keyhole neck': 'Halter',
+  hoodie: 'Hooded',
+  na: 'Other',
+  'notch collar': 'Other',
+  notch: 'Other',
+  'scoop neck': 'Scoop',
+};
 
-                let fabricType = "Others"; // Default value
+const SLEEVE_LENGTH_MAPPING = {
+  full: 'Full-length',
+  'three quarter': '3/4th sleeve',
+  half: 'Short sleeve',
+  short: 'Short',
+  quarter: 'Full-length',
+  'elbow length': 'Elbow-length sleeve',
+  sleeveless: 'Sleeveless',
+  'above elbow length': 'Elbow-length sleeve',
+  'half ': 'Short sleeve', // extra space case
+};
+// ─── Pure mapping helpers ─────────────────────────────────────────────────────
 
-                if (product.fabrics[0]?.name && product.fabrics[0]?.name.trim() !== "") {
-                    const trimmedFabric = product.fabrics[0]?.name.trim();
+const mapSeason = (season) => {
+  if (!season?.trim()) return '';
+  const lower = season.toLowerCase();
+  for (const [keyword, label] of Object.entries(SEASON_KEYWORDS)) {
+    if (lower.includes(keyword)) return label;
+  }
+  return '';
+};
 
-                    if (fabricList.has(trimmedFabric)) {
-                        fabricType = trimmedFabric;
-                    }
-                }
+const mapColorShade = (color) =>
+  color?.trim() ? (color.trim().toLowerCase() === 'pastel' ? 'Light' : 'Dark') : '';
 
-                //    *********************** end of fabric  mapping *********************
+const mapProminentColor = (color) => {
+  if (!color?.trim()) return '';
+  const trimmed = color.trim();
+  return COLOR_FAMILY.has(trimmed) ? trimmed : (COLOR_MAPPING[trimmed] ?? '');
+};
 
-                //    *********************** start of pattern   mapping *********************
-                const patternList = new Set([
-                    "Solid",
-                    "Stripes",
-                    "Textured",
-                    "Tie & Dye",
-                    "Typographic",
-                    "Applique",
-                    "Self-design",
-                    "Abstract",
-                    "Animal",
-                    "Aztec",
-                    "Block Print",
-                    "Cartoon",
-                    "Chevrons",
-                    "Geometric",
-                    "Graphic",
-                    "Heathered",
-                    "Indian",
-                    "Leaf",
-                    "Micro Print",
-                    "Nailhead",
-                    "Novelty",
-                    "Numeric",
-                    "Paisley",
-                    "Quilted",
-                    "Reptilian",
-                    "Tropical",
-                    "Baroque",
-                    "Embroidery",
-                    "Holographic",
-                    "Monochrome",
-                    "Nautical",
-                    "Others",
-                    "Ribbed",
-                    "Ruffles",
-                    "Colourblock",
-                    "Crochet",
-                    "Patch-work",
-                    "Camouflage",
-                    "Checks",
-                    "Embellished",
-                    "Floral",
-                    "Lace",
-                    "Ombre-dyed",
-                    "Polka-dot",
-                    "Washed",
-                    "Tribal",
-                ]);
+const mapFabric = (rawFabric) => {
+  if (!rawFabric?.trim()) return 'Others';
 
-                const patternMapping = {
-                    Ombre: "Ombre-dyed",
-                    Polka: "Polka-dot",
-                    Leopard: "Animal",
-                };
+  const trimmed = rawFabric.trim();
+  const key = trimmed.toLowerCase();
 
-                let prints = "Others"; // Default value
+  // 1. Explicit internal-name → Ajio mapping (handles Lycra→Elastane, Jersey→Knit, etc.)
+  if (FABRIC_MAPPING[key]) return FABRIC_MAPPING[key];
 
-                if (product.prints && product.prints.trim() !== "") {
-                    const trimmedPattern = product.prints.trim();
+  // 2. Case-insensitive exact match against the Ajio dropdown
+  for (const fabric of FABRIC_LIST) {
+    if (fabric.toLowerCase() === key) return fabric;
+  }
 
-                    // Check if pattern is in patternList
-                    for (const pattern of patternList) {
-                        if (trimmedPattern.toLowerCase().includes(pattern.toLowerCase())) {
-                            prints = pattern;
-                            break;
-                        }
-                    }
+  // 3. Includes match — "black moss crepe" contains "crepe" → Crepe
+  //                     "Floral screen printed cotton" contains "cotton" → Cotton
+  //                     "Black Big Butta Brocade" contains "brocade" → Brocade
+  //    Longest name wins: "Organic Cotton" matched before "Cotton"
+  for (const fabric of FABRIC_LIST_SORTED) {
+    if (key.includes(fabric.toLowerCase())) return fabric;
+  }
 
-                    // Check pattern mapping if not found in patternList
-                    if (prints === "Others") {
-                        prints = patternMapping[trimmedPattern] || "Others";
-                    }
-                }
+  return 'Others';
+};
 
-                //    *********************** start of pattern   mapping *********************
+const mapFittingType = (value) => {
+  if (!value) return 'Regular Fit';
 
-                //    *********************** start of sleeve length    mapping *********************
-                const sleeveMapping = {
-                    Half: "Short sleeve",
-                    "Three Quarter": "3/4th sleeve",
-                    Full: "Full-length sleeve",
-                };
+  const key = value.toLowerCase().trim();
 
-                let sleeveKey =
-                    typeof product.sleeveLength === "string"
-                        ? product.sleeveLength.trim()
-                        : "";
-                let sleeveLength = sleeveMapping[sleeveKey] || product.sleeveLength; // Default value for unmapped cases
+  return FITTING_TYPE_MAPPING[key] || 'Regular Fit';
+};
 
-                //    *********************** end of sleeve length    mapping *********************
+const mapPattern = (prints) => {
+  if (!prints?.trim()) return 'Others';
+  const trimmed = prints.trim();
+  for (const pattern of PATTERN_LIST) {
+    if (trimmed.toLowerCase().includes(pattern.toLowerCase())) return pattern;
+  }
+  return PATTERN_MAPPING[trimmed] ?? 'Others';
+};
 
-                //    *********************** start of washcare length    mapping *********************
-                const washCareMapping = {
-                    "Machine Wash": "Machine wash",
-                    "Dry Clean Only": "Dry clean",
-                    "Hand Wash": "Hand wash",
-                };
+const mapNeckline = (value) => {
+  if (!value) return 'Other';
 
-                let washCareKey =
-                    typeof product.washCare === "string" ? product.washCare.trim() : "";
-                let washCare = washCareMapping[washCareKey] || "Not Specified"; // Default if not mapped
-                //    *********************** end of washcare length    mapping *********************
+  return NORMAL_TO_MAPPED_NECKLINE[value.toLowerCase().trim()] || 'Other';
+};
 
-                // Fitting
-                let fitting = "";
-                const Fitting_List = new Set([
-                    "Relaxed Fit",
-                    "Slim Fit",
-                    "Boxy Fit",
-                    "Extra Slim Fit",
-                    "Fitted",
-                    "Loose Fit",
-                    "Maternity Fit",
-                    "Regular Fit",
-                    "Stylised Fit",
-                    "Tailored Fit",
-                ]);
+const mapSleeveLength = (value) => {
+  if (!value) return 'Sleeveless';
 
-                if (product.fittingType && product.fittingType.trim() !== "") {
-                    for (const fit of Fitting_List) {
-                        if (fit.toLowerCase() === product.fittingType.trim().toLowerCase()) {
-                            fitting = fit;
-                            break;
-                        }
-                    }
-                }
+  const key = value.toLowerCase().trim();
 
-                // Neckline
-                let neckline = "";
-                const Neckline_List = new Set([
-                    "V-neck",
-                    "Round",
-                    "Boat",
-                    "Square",
-                    "High",
-                    "Collar",
-                    "Scoop",
-                    "Off Shoulder",
-                    "Cowl",
-                ]);
+  return SLEEVE_LENGTH_MAPPING[key] || 'Sleeveless';
+};
+// ─── Main generator ───────────────────────────────────────────────────────────
 
-                if (product.neckStyle && product.neckStyle.trim() !== "") {
-                    for (const neckStyle of Neckline_List) {
-                        if (
-                            product.neckStyle.toLowerCase().includes(neckStyle.toLowerCase())
-                        ) {
-                            neckline = neckStyle;
-                            break;
-                        }
-                    }
-                }
+const generateAjioTopstListing = (selectedData, header) => {
+  const year = new Date().getFullYear(); // computed once, not per row
 
-                return {
-                    "Style Code": product.styleNumber,
-                    "Style Description": product.styleDescription,
-                    "Item SKU": `${product.styleNumber}-${product.stylePrimaryColor}-${mappedSize}`,
-                    Brand: "Qurvii",
-                    EAN: `${product.styleNumber}${product.stylePrimaryColor}${mappedSize}`,
-                    TD: "0",
-                    MRP: product.mrp || 0,
-                    HSN: "62114290",
-                    "Product Groups": "Casual",
-                    "Fashion Groups": "Fashion",
-                    "Season Code": season || "",
-                    "Season Year": year,
-                    Size: mappedSize,
-                    articleDimensionsUnitHeight: 1,
-                    articleDimensionsUnitLength: 1,
-                    articleDimensionsUnitWidth: 1,
-                    articleDimensionsUnitLengthUOM: "CM",
-                    articleDimensionsUnitWeight: 200,
-                    articleDimensionsUnitWeightUOM: "GRAM",
-                    packageDimensionsHeight: 4,
-                    packageDimensionsLength: 30,
-                    packageDimensionsWidth: 17,
-                    packageDimensionsLengthUOM: "CM",
-                    packageDimensionsWeight: 300,
-                    packageDimensionsWeightUOM: "GRAM",
-                    "Additional Information 1":
-                        "Our clothes are specially designed for women with curves. Before placing an order, please refer to our Size Chart",
-                    "Additional Information 2": "",
-                    "Additional Information 3": "",
-                    Character: "",
-                    "Component Count": 1,
-                    "Country of Origin": "India",
-                    "Hidden Detail": "",
-                    Highlight: "",
-                    "Imported By":
-                        "Qurvii, B-149 2nd floor sector 6, Noida, Pincode 201301,Email -logistics@qurvii.com",
-                    "Manufactured By":
-                        "Qurvii, B-149 2nd floor sector 6, Noida, Pincode 201301,Email -logistics@qurvii.com",
-                    "Marketed By":
-                        "Qurvii, B-149 2nd floor sector 6, Noida, Pincode 201301,Email -logistics@qurvii.com",
-                    Mood: "",
-                    "Sold By": "",
-                    "Multi Brick": "",
-                    "Multi Segment": "Women",
-                    "Multi Vertical": "Western Wear",
-                    "Net Quantity": "1N",
-                    "Package Contains": `1 ${product.styleType}`,
-                    "Size Tip": "",
-                    USP: "",
-                    "Trend Theme": "",
-                    Accent: "",
-                    "Color Family": prominentColor || product.stylePrimaryColor,
-                    "Color Shade": colorShade || product.stylePrimaryColor,
-                    Disclaimer: "",
-                    "Fabric Detail": product.fabrics[0]?.name || "",
-                    "Fabric Type": fabricType || "Others",
-                    Pattern: prints || "Others",
-                    "Primary Color": product.stylePrimaryColor || "",
-                    "Secondary Color": "",
-                    "Size Format": "IN",
-                    "Size Group": "Regular",
-                    "Wash Care": washCare || "not mapped",
-                    Care: "",
-                    "Size worn by Model": "",
-                    "Stock Type": "",
-                    Fitting: fitting || product.fittingType,
-                    "IND_PT(ONLY FOR INTERNAL USE)": "",
-                    "Product Name": product.styleType || "",
-                    "Length": "",
-                    Neckline: neckline || product.neckStyle,
-                    "Sleeve Length": sleeveLength || "Sleeveless",
-                    "Sleeve Type": "",
-                    "Sport": "",
-                    StandardSize: mappedSize,
-                };
-            })
-        );
+  const csvData = selectedData
+    .filter((p) => p.styleType === 'Top' || p.styleType.toLowerCase().includes('top'))
+    .flatMap((product) =>
+      SIZES.map((size) => {
+        const mappedSize = SIZE_MAPPING[size];
+        const fabricRaw = product.fabrics[0]?.name ?? '';
+        const primaryColor = product.stylePrimaryColor?.trim() ?? '';
 
-    // Convert data to array format for `Papa.unparse`
-    const csvRows = csvData.map((obj) =>
-        csvHeaders.map((header) => obj[header] || "")
+        return {
+          '*Style Code': product.styleNumber,
+          '*Style Description': product.styleDescription,
+          '*Item SKU': `${product.styleNumber}-${primaryColor}-${mappedSize}`,
+          '*Brand': 'Qurvii',
+          '*EAN': `${product.styleNumber}${primaryColor}${mappedSize}`,
+          '*TD': '0',
+          '*MRP': product.mrp || 0,
+          '*HSN': '62114290',
+          '*Product Groups': 'Casual',
+          '*Fashion Groups': 'Fashion',
+          '*Season Code': mapSeason(product.season),
+          '*Season Year': year,
+          '*Size': mappedSize,
+          '*articleDimensionsUnitHeight': 1,
+          '*articleDimensionsUnitLength': 1,
+          '*articleDimensionsUnitWidth': 1,
+          '*articleDimensionsUnitLengthUOM': 'CM',
+          '*articleDimensionsUnitWeight': 200,
+          '*articleDimensionsUnitWeightUOM': 'GRAM',
+          '*packageDimensionsHeight': 4,
+          '*packageDimensionsLength': 30,
+          '*packageDimensionsWidth': 17,
+          '*packageDimensionsLengthUOM': 'CM',
+          '*packageDimensionsWeight': 300,
+          '*packageDimensionsWeightUOM': 'GRAM',
+          'Additional Information 1':
+            'Our clothes are specially designed for women with curves. Before placing an order, please refer to our Size Chart',
+          'Additional Information 2': '',
+          'Additional Information 3': '',
+          Character: '',
+          '*Component Count': 1,
+          '*Country of Origin': 'India',
+          'Hidden Detail': '',
+          Highlight: '',
+          'Imported By':
+            'Qurvii, B-149 2nd floor sector 6, Noida, Pincode 201301,Email -logistics@qurvii.com',
+          'Manufactured By':
+            'Qurvii, B-149 2nd floor sector 6, Noida, Pincode 201301,Email -logistics@qurvii.com',
+          '*Marketed By':
+            'Qurvii, B-149 2nd floor sector 6, Noida, Pincode 201301,Email -logistics@qurvii.com',
+          Mood: '',
+          'Sold By': '',
+          'Multi Brick': '',
+          'Multi Segment': 'Women',
+          'Multi Vertical': 'Western Wear',
+          '*Net Quantity': '1N',
+          '*Package Contains': `1 ${product.styleType}`,
+          'Size Tip': '',
+          USP: '',
+          'Trend Theme': '',
+          Accent: '',
+          '*Color Family': mapProminentColor(primaryColor) || primaryColor,
+          'Color Shade': mapColorShade(primaryColor),
+          Disclaimer: '',
+          '*Fabric Detail': fabricRaw,
+          '*Fabric Type': mapFabric(fabricRaw),
+          '*Pattern': mapPattern(product.prints),
+          '*Primary Color': primaryColor,
+          'Secondary Color': '',
+          '*Size Format': 'IN',
+          '*Size Group': 'Regular',
+          '*Wash Care': WASH_CARE_MAPPING[product.washCare?.trim()] ?? 'Not Specified',
+          Care: '',
+          'Size worn by Model': '',
+          'Stock Type': '',
+          '*Fitting': mapFittingType(product.fittingType),
+          'IND_PT(ONLY FOR INTERNAL USE)': '',
+          'Product Name': product.styleType || '',
+          '*Length': 'Medium',
+          '*Neckline': mapNeckline(product.neckStyle),
+          '*Sleeve Length': mapSleeveLength(product.sleeveLength?.trim()),
+          'Sleeve Type': '',
+          Sport: '',
+          '*StandardSize': mappedSize,
+          '*Style Type': 'Regular',
+        };
+      })
     );
 
-    // Generate CSV
-    const csv = Papa.unparse({
-        fields: csvHeaders,
-        data: csvRows,
-    });
+  // Map each row object to ordered column values
+  const csvRows = csvData.map((row) => header.map((col) => row[col] ?? ''));
 
-    // Create and download CSV file
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "ajio_tops_listing.csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const csv = Papa.unparse({ fields: header, data: csvRows });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'ajio_tops_listing.csv';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url); // ← clean up blob URL immediately after click
 };
 
 export default generateAjioTopstListing;
-
-
-
-

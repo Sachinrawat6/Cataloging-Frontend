@@ -533,7 +533,13 @@ const Sidebar = ({ data, selectedChannels, selectedBrands }) => {
         { type: 'Dress', action: () => generateAjioDressListing(data) },
         { type: 'Shirt', action: () => generateAjioShirtListing(data) },
         { type: 'Skirt', action: () => generateAjioSkirtListing(data) },
-        { type: 'Top', action: () => generateAjioTopstListing(data) },
+        {
+          type: 'Top',
+          action: () => generateAjioTopstListing(data),
+          actionWithHeaders: (data, headers) => {
+            generateAjioTopstListing(data, headers);
+          },
+        },
         { type: 'Pant & Plazzo', action: () => generateAjioPlazosAndPantsListing(data) },
         { type: 'Shrug', action: () => generateAjioShurgsListing(data) },
         { type: 'Jacket', action: () => generateAjioJacketsListing(data) },
