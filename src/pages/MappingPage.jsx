@@ -130,6 +130,7 @@ const MappingPage = () => {
     [mappedStyle, ensureString, applySpecialStyleRules, standardizeSize]
   );
 
+  console.log('Google sheet color data inside mapping page', googleSheetData);
   // Optimized data fetching with caching
   const fetchMapping = useCallback(
     async (forceRefresh = false) => {
@@ -196,7 +197,7 @@ const MappingPage = () => {
       try {
         const response = await axios.get(url);
         const result = response.data.values.slice(1).map((row) => ({
-          styleNumber: ensureString(row[0]),
+          styleNumber: Number(row[0]),
           checked: row[1] || '',
           color: row[2] || '',
         }));
@@ -335,29 +336,69 @@ const MappingPage = () => {
   }, []);
 
   // Generate mapping file
+  // const generateMapping = useCallback(
+  //   (mappingType = 'original') => {
+  //     const output = csvData.map((row) => {
+  //       const channelListingSkuCode = ensureString(
+  //         row['Channel Listing SKU Code'] || row['Channel Listing SkuCode'] || ''
+  //       );
+  //       const channelListingId = ensureString(row['Channel Listing Id'] || '');
+
+  //       let productSkuCode = processSkuWithMapping(channelListingSkuCode, mappingType);
+  //       let rawStyleNumber = row['Channel Listing SKU Code'] || row['Channel Listing SkuCode'];
+  //       let stylePart = rawStyleNumber ? rawStyleNumber?.split('-')[0] : '';
+  //       let matchingColor = googleSheetData.find((s) => s.styleNumber === Number(stylePart))?.color;
+  //       let size = rawStyleNumber?.split('-')[2];
+
+  //       return {
+  //         'Channel Listing SKU Code': channelListingSkuCode,
+  //         'Channel Listing Id': channelListingId,
+  //         'Product SkuCode': `${stylePart}-${matchingColor?.trim()}-${size}`,
+  //       };
+  //     });
+
+  //     setMappingOutput(output);
+  //     return output;
+  //   },
+  //   [csvData, ensureString, processSkuWithMapping]
+  // );
+
   const generateMapping = useCallback(
     (mappingType = 'original') => {
       const output = csvData.map((row) => {
         const channelListingSkuCode = ensureString(
           row['Channel Listing SKU Code'] || row['Channel Listing SkuCode'] || ''
         );
+
         const channelListingId = ensureString(row['Channel Listing Id'] || '');
 
         let productSkuCode = processSkuWithMapping(channelListingSkuCode, mappingType);
 
+        const skuParts = channelListingSkuCode.split('-');
+
+        // Agar '-' nahi hai to pura SKU hi style number maan lo
+        const stylePart = skuParts[0] || '';
+
+        const matchingColor = googleSheetData.find(
+          (s) => String(s.styleNumber) === String(stylePart)
+        )?.color;
+
+        // Size tabhi milegi jab SKU me 3 parts hon
+        const size = skuParts.length >= 3 ? skuParts[2] : '';
+
         return {
           'Channel Listing SKU Code': channelListingSkuCode,
           'Channel Listing Id': channelListingId,
-          'Product SkuCode': productSkuCode,
+          'Product SkuCode':
+            matchingColor && size ? `${stylePart}-${matchingColor.trim()}-${size}` : productSkuCode, // Agar format complete nahi hai to original processed SKU hi use karo
         };
       });
 
       setMappingOutput(output);
       return output;
     },
-    [csvData, ensureString, processSkuWithMapping]
+    [csvData, googleSheetData, ensureString, processSkuWithMapping]
   );
-
   // Export to Excel
   const exportToExcel = useCallback(
     (mappingType = 'original') => {
