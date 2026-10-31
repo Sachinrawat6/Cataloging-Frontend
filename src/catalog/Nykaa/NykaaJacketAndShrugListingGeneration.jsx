@@ -213,7 +213,8 @@ const generateNykaaJackeAndShrugeListing = (selectedData, headers) => {
         product.styleType?.toLowerCase() === 'jacket' ||
         product.styleType?.toLowerCase() === 'shrug' ||
         product.styleType?.toLowerCase() === 'shrugs' ||
-        product.styleType?.toLowerCase() === 'hoodie'
+        product.styleType?.toLowerCase() === 'hoodie' ||
+        product.styleType?.toLowerCase() === 'poncho'
     )
     .flatMap((product) =>
       sizes.map((size) => {

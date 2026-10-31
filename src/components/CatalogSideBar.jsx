@@ -676,7 +676,11 @@ const Sidebar = ({ data, selectedChannels, selectedBrands }) => {
         (category[style.styleType?.trim()?.toLowerCase()] || 0) + 1;
     }
     const categoryCount = {
-      dress: (category['dress'] || 0) + (category['kaftan'] || 0),
+      dress:
+        (category['dress'] || 0) +
+        (category['kaftan'] || 0) +
+        (category['shirt dress'] || 0) +
+        (category['night dress'] || 0),
       blazers: (category['blazers'] || 0) + (category['blazer'] || 0),
       pant:
         (category['pant'] || 0) +
@@ -696,14 +700,15 @@ const Sidebar = ({ data, selectedChannels, selectedBrands }) => {
           ? (category['jacket'] || 0) +
             (category['coat'] || 0) +
             (category['hoodie'] || 0) +
-            (category['shrug'] || 0)
+            (category['shrug'] || 0) +
+            (category['poncho'] || 0)
           : channel?.toLowerCase() === 'myntra' || channel?.toLowerCase() === 'myntra +'
             ? (category['jacket'] || 0) + (category['hoodie'] || 0) + (category['sweatshirt'] || 0)
             : (category['jacket'] || 0) +
               (category['coat'] || 0) +
               (category['hoodie'] || 0) +
               (category['sweatshirt'] || 0),
-      top: category['top'] || 0,
+      top: (category['top'] || 0) + (category['tunic'] || 0) + (category['tunics'] || 0),
       coat: category['coat'] || 0,
       skirt: category['skirt'] || 0,
     };

@@ -160,7 +160,8 @@ const generateNykaaDressListing = (selectedData, headers) => {
       (product) =>
         product.styleType?.toLowerCase() === 'dress' ||
         product.styleType?.toLowerCase() === 'kaftan' ||
-        product.styleType.toLowerCase().includes('shirt dress')
+        product.styleType.toLowerCase().includes('shirt dress') ||
+        product.styleType.toLowerCase().includes('dress')
     )
     .flatMap((product) =>
       sizes.map((size) => {

@@ -210,7 +210,12 @@ const generateNykaaTopListing = (selectedData, headers) => {
   const sizes = Object.keys(sizeMapping); // ["XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL", "XXXXL", "XXXXXL"]
 
   const csvData = selectedData
-    .filter((product) => product.styleType?.toLowerCase() === 'top')
+    .filter(
+      (product) =>
+        product.styleType?.toLowerCase() === 'top' ||
+        product.styleType?.toLowerCase() === 'tunics' ||
+        product.styleType?.toLowerCase() === 'tunic'
+    )
     .flatMap((product) =>
       sizes.map((size) => {
         const mappedSize = sizeMapping[size]; // Convert size to 2XL, 3XL, etc.
