@@ -248,7 +248,9 @@ const generateMyntraDressListingFile = (selectedData, csvHeaders) => {
         (product) =>
           product.styleType === 'Dress' ||
           product.styleType === 'Kaftan' ||
-          product.styleType.toLowerCase().includes('shirt dress')
+          product.styleType.toLowerCase().includes('shirt dress') ||
+          product.styleType.toLowerCase().includes('night dress') ||
+          product.styleType.toLowerCase().includes('dress')
       )
       .flatMap((product, index) =>
         sizes.map((size) => {

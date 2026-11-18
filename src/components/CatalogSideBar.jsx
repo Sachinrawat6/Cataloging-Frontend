@@ -683,10 +683,20 @@ const Sidebar = ({ data, selectedChannels, selectedBrands }) => {
         (category['night dress'] || 0),
       blazers: (category['blazers'] || 0) + (category['blazer'] || 0),
       pant:
-        (category['pant'] || 0) +
-        (category['trouser'] || 0) +
-        (category['short'] || 0) +
-        (category['plazzo'] || 0),
+        channel?.toLowerCase() === 'nykaa'
+          ? (category['pant'] || 0) +
+            (category['trouser'] || 0) +
+            (category['short'] || 0) +
+            (category['plazzo'] || 0) +
+            (category['shorts'] || 0) +
+            (category['joger'] || 0) +
+            (category['jogers'] || 0) +
+            (category['joggers'] || 0) +
+            (category['jogger'] || 0)
+          : (category['pant'] || 0) +
+            (category['trouser'] || 0) +
+            (category['short'] || 0) +
+            (category['plazzo'] || 0),
       trouser:
         (category['pant'] || 0) +
         (category['trouser'] || 0) +

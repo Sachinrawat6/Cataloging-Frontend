@@ -222,6 +222,9 @@ const generateNykaaPantShortsPlazzoAndJoggers = (selectedData, headers) => {
         product.styleType?.toLowerCase()?.trim() === 'palazzo' ||
         product.styleType?.toLowerCase()?.trim() === 'shorts' ||
         product.styleType?.toLowerCase()?.trim() === 'joggers' ||
+        product.styleType?.toLowerCase()?.trim() === 'jogger' ||
+        product.styleType?.toLowerCase()?.trim() === 'jogers' ||
+        product.styleType?.toLowerCase()?.trim() === 'joger' ||
         product.styleType?.toLowerCase()?.trim() === 'plazzo' ||
         product.styleType?.toLowerCase()?.trim() === 'trouser'
     )
